@@ -1,0 +1,20 @@
+﻿CREATE TABLE IF NOT EXISTS ContasCorrente (
+  Id INTEGER PRIMARY KEY AUTOINCREMENT,
+  NumeroConta TEXT NOT NULL UNIQUE,
+  NomeTitular TEXT,
+  Cpf TEXT,
+  SenhaHash TEXT NOT NULL,
+  Ativo INTEGER NOT NULL DEFAULT 1,
+  CriadoEm TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS Movimentos (
+  Id INTEGER PRIMARY KEY AUTOINCREMENT,
+  RequisicaoId TEXT NOT NULL,
+  ContaNumero TEXT NOT NULL,
+  Tipo TEXT NOT NULL,
+  Valor REAL NOT NULL,
+  CriadoEm TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS UX_Movimentos_RequisicaoId ON Movimentos (RequisicaoId);

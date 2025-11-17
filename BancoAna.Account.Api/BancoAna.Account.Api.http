@@ -1,0 +1,6 @@
+@BancoAna.Account.Api_HostAddress = http://localhost:5022
+
+GET {{BancoAna.Account.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
