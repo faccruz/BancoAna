@@ -4,11 +4,24 @@ namespace BancoAna.Account.Application.Interfaces;
 
 public interface IAccountRepository
 {
-    Task CreateAsync(Domain.Models.Account account);
-    Task<Domain.Models.Account?> GetByNumeroContaAsync(string numeroConta);
-    Task<Domain.Models.Account?> GetByCpfAsync(string cpf);
-    Task AddMovementAsync(Movement mov);
-    Task<decimal> GetSaldoAsync(string numeroConta);
-    Task<bool> RequisicaoExistsAsync(string requisicaoId);
+    // contas
+    Task CriarContaAsync(ContaCorrente conta);
+    Task<ContaCorrente?> ObterPorNumeroAsync(int numero);
+    Task<ContaCorrente?> ObterPorIdAsync(string idConta);
+    Task<ContaCorrente?> ObterPorCpfAsync(string cpf);
+
+    // movimentos
+    Task AdicionarMovimentoAsync(Movimento mov);
+    Task<decimal> ObterSaldoAsync(string idConta);
+
+    // idempotencia
+    Task<bool> IdempotenciaExisteAsync(string chave);
+    Task RegistrarIdempotenciaAsync(Idempotencia idem);
+
+    // transferencias / tarifas
+    Task RegistrarTransferenciaAsync(Transferencia tr);
+    Task RegistrarTarifaAsync(Tarifa t);
+
+    // inicialização DB
     Task EnsureTablesAsync();
 }
