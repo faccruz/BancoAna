@@ -1,6 +1,6 @@
 ﻿CREATE TABLE IF NOT EXISTS contacorrente (
   idcontacorrente TEXT(37) PRIMARY KEY,
-  numero INTEGER(10) NOT NULL UNIQUE,
+  numero INTEGER(10) NOT NULL,
   nome TEXT(100) NOT NULL,
   ativo INTEGER(1) NOT NULL DEFAULT 0,
   senha TEXT(100) NOT NULL,

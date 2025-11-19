@@ -192,7 +192,6 @@ public class AccountController : ControllerBase
     [HttpGet("saldo")]
     public async Task<IActionResult> GetSaldo([FromQuery] int? numeroConta = null)
     {
-        // 1) resolver conta: se veio numero via query, usar; se não, pegar do token
         string idConta = null;
 
         if (numeroConta.HasValue)
@@ -203,15 +202,13 @@ public class AccountController : ControllerBase
         }
         else
         {
-            // pegar id conta do token -> claim "sub" (ou "accountId", dependendo de como voce gerou o token)
-            idConta = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
+            idConta = GetAccountIdFromToken();
             if (string.IsNullOrEmpty(idConta))
             {
-                // tentar extrair numero da claim "numeroConta" e resolver
-                var numeroClaim = User.FindFirst("numeroConta")?.Value;
-                if (!string.IsNullOrEmpty(numeroClaim) && int.TryParse(numeroClaim, out var numero))
+                var numero = GetAccountNumberFromToken();
+                if (numero.HasValue)
                 {
-                    var conta = await _repo.ObterPorNumeroAsync(numero);
+                    var conta = await _repo.ObterPorNumeroAsync(numero.Value);
                     if (conta == null) return NotFound(new { message = "Conta do token não encontrada." });
                     idConta = conta.IdContaCorrente;
                 }
@@ -225,4 +222,21 @@ public class AccountController : ControllerBase
 
         return Ok(new { idcontacorrente = idConta, saldo });
     }
+
+    private string? GetAccountIdFromToken()
+    {
+        // Try NameIdentifier / sub
+        var id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+              ?? User.FindFirst("sub")?.Value;
+        return string.IsNullOrEmpty(id) ? null : id;
+    }
+
+    private int? GetAccountNumberFromToken()
+    {
+        var numeroClaim = User.FindFirst("numeroConta")?.Value;
+        if (string.IsNullOrEmpty(numeroClaim)) return null;
+        if (int.TryParse(numeroClaim, out var n)) return n;
+        return null;
+    }
+
 }

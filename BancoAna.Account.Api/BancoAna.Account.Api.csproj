@@ -19,4 +19,10 @@
     <ProjectReference Include="..\BancoAna.Account.Domain\BancoAna.Account.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Update="ProgramPartial.cs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Compile>
+  </ItemGroup>
+
 </Project>

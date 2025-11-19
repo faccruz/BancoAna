@@ -63,6 +63,8 @@ namespace BancoAna.Account.Application.Services
             // data
             var data = DateTime.Now.ToString("dd/MM/yyyy");
 
+
+
             // --- realiza operações ---
             // Débito da origem (valor)
             var movDebito = new Movimento
@@ -86,7 +88,7 @@ namespace BancoAna.Account.Application.Services
             };
             await _repo.AdicionarMovimentoAsync(movCredito);
 
-            // Se tarifa > 0: registrar débito de tarifa na origem como movimento e registrar na tabela tarifa
+            // Se tarifa > 0: registrar débito de tarifa na origem como movimento e registrar na tabela tarifa (metadado)
             if (tarifa > 0m)
             {
                 var movTarifa = new Movimento
@@ -98,9 +100,10 @@ namespace BancoAna.Account.Application.Services
                     Valor = tarifa
                 };
 
+                // Debita efetivamente do saldo (movimento)
                 await _repo.AdicionarMovimentoAsync(movTarifa);
 
-                // registrar tarifa
+                // registrar somente metadados na tabela tarifa (não deve duplicar movTarifa)
                 var tarifaEntity = new Tarifa
                 {
                     IdTarifa = Guid.NewGuid().ToString(),
@@ -130,6 +133,7 @@ namespace BancoAna.Account.Application.Services
                 Requisicao = System.Text.Json.JsonSerializer.Serialize(resumoReq),
                 Resultado = "OK"
             });
+
 
             return new TransferResult
             {

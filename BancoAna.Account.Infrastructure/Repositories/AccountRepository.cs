@@ -13,13 +13,21 @@ public class AccountRepository : IAccountRepository
     public async Task CriarContaAsync(ContaCorrente conta)
     {
         using var conn = _dbFactory.CreateConnection();
+        
         var sql = @"
-            INSERT INTO contacorrente
-            (idcontacorrente, numero, nome, ativo, senha, salt, Cpf)
-            VALUES
-            (@IdContaCorrente, @Numero, @Nome, @Ativo, @Senha, @Salt, @Cpf);
-        ";
-        await conn.ExecuteAsync(sql, conta);
+                INSERT INTO contacorrente (idcontacorrente, numero, nome, ativo, senha, salt, cpf)
+                VALUES (@IdConta, @Numero, @Nome, @Ativo, @Senha, @Salt, @Cpf);";
+
+        await conn.ExecuteAsync(sql, new
+        {
+            IdConta = conta.IdContaCorrente,
+            Numero = conta.Numero,
+            Nome = conta.Nome,
+            Ativo = conta.Ativo ? 1 : 0,
+            Senha = conta.Senha,
+            Salt = conta.Salt,
+            Cpf = conta.Cpf
+        });
     }
 
     public async Task<ContaCorrente?> ObterPorNumeroAsync(int numero)
@@ -49,49 +57,41 @@ public class AccountRepository : IAccountRepository
     public async Task AdicionarMovimentoAsync(Movimento mov)
     {
         using var conn = _dbFactory.CreateConnection();
+     
         var sql = @"
-            INSERT INTO movimento
-            (idmovimento, idcontacorrente, datamovimento, tipomovimento, valor)
-            VALUES
-            (@IdMovimento, @IdContaCorrente, @DataMovimento, @TipoMovimento, @Valor);
-        ";
-        await conn.ExecuteAsync(sql, mov);
+                    INSERT INTO movimento (idmovimento, idcontacorrente, datamovimento, tipomovimento, valor)
+                    VALUES (@IdMovimento, @IdContaCorrente, @DataMovimento, @TipoMovimento, @Valor);";
+
+        await conn.ExecuteAsync(sql, new
+        {
+            IdMovimento = Guid.NewGuid().ToString(),
+            IdContaCorrente = mov.IdContaCorrente,
+            DataMovimento = mov.DataMovimento,
+            TipoMovimento = mov.TipoMovimento,
+            Valor = mov.Valor
+        });
     }
 
-    public async Task<decimal> ObterSaldoAsync(string idConta)
+    public async Task<decimal> ObterSaldoAsync(string idContaCorrente)
     {
         using var conn = _dbFactory.CreateConnection();
 
         var sql = @"
-        SELECT COALESCE(SUM(
-            CASE 
-                WHEN UPPER(tipomovimento) = 'C' THEN valor
-                WHEN UPPER(tipomovimento) = 'D' THEN -valor
-                ELSE 0
-            END
-        ), 0) AS Saldo
-        FROM movimento
-        WHERE idcontacorrente = @id;
-    ";
+                    SELECT 
+                      COALESCE(SUM(
+                        CASE 
+                          WHEN tipomovimento = 'C' THEN valor
+                          WHEN tipomovimento = 'D' THEN -valor
+                          ELSE 0
+                        END
+                      ), 0) AS Saldo
+                    FROM movimento
+                    WHERE idcontacorrente = @IdConta;
+                    ";
+                
+        var result = await conn.ExecuteScalarAsync<decimal?>(sql, new { IdConta = idContaCorrente });
 
-        // ExecuteScalarAsync pode retornar double (sqlite) ou decimal; tratar generically
-        var obj = await conn.ExecuteScalarAsync<object>(sql, new { id = idConta });
-        if (obj == null || obj == DBNull.Value) return 0m;
-
-        // converter com cuidado
-        try
-        {
-            return Convert.ToDecimal(obj);
-        }
-        catch
-        {
-            // fallback: tentar double -> decimal
-            if (obj is double d) return Convert.ToDecimal(d);
-            if (obj is float f) return Convert.ToDecimal(f);
-            if (decimal.TryParse(obj.ToString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var dec))
-                return dec;
-            return 0m;
-        }
+        return result ?? 0m;
     }
 
     public async Task<bool> IdempotenciaExisteAsync(string chave)
@@ -126,12 +126,17 @@ public class AccountRepository : IAccountRepository
     public async Task RegistrarTarifaAsync(Tarifa t)
     {
         using var conn = _dbFactory.CreateConnection();
-        var sql = @"
-            INSERT INTO tarifa
-            (idtarifa, idcontacorrente, datamovimento, valor)
-            VALUES (@IdTarifa, @IdContaCorrente, @DataMovimento, @Valor);
-        ";
-        await conn.ExecuteAsync(sql, t);
+
+        var sql = @"INSERT INTO tarifa (idtarifa, idcontacorrente, datamovimento, valor)
+                        VALUES (@IdTarifa, @IdContaCorrente, @DataMovimento, @Valor);";
+
+        await conn.ExecuteAsync(sql, new
+        {
+            IdTarifa = t.IdTarifa,
+            IdContaCorrente = t.IdContaCorrente,
+            DataMovimento = t.DataMovimento,
+            Valor = t.Valor
+        });
     }
 
     public async Task EnsureTablesAsync()
